@@ -1,8 +1,8 @@
 %preprocess image
-input = imread('tree.jpg');
+input = imread('scarlett.jpg');
 resized = imresize(input, Constants.IMSIZE);
 gray = rgb2gray(resized);
-imwrite(gray, 'OutputImages/grayScale.jpg');
+%imwrite(gray, 'OutputImages/grayScale.jpg');
 
 %matlab already does gaussian pyramid :)
 blurred = gray;
@@ -12,7 +12,7 @@ for scale = 1:Constants.SCALES
     reducedList{scale} = blurred;
     
     fileName = strcat(directory,'reduced',int2str(scale),'.jpg');
-    imwrite(reducedList{scale}, fileName);
+    %imwrite(reducedList{scale}, fileName);
     
     expanded = blurred;
     for expansions = 1:scale
@@ -25,7 +25,7 @@ for scale = 1:Constants.SCALES
     end
     expandedList{scale} = expanded;
     fileName = strcat(directory,'expanded',int2str(scale),'.jpg');
-    imwrite(expandedList{scale}, fileName);
+    %imwrite(expandedList{scale}, fileName);
 end
 
 %Create intensity maps with difference of Gaussian
@@ -40,7 +40,7 @@ for center = 2:4
         intenseList = [intenseList;intenseMap];
         imageIndex = strcat(int2str(center),'_',int2str(surround));
         fileName = strcat(directory,'intense',imageIndex,'.jpg');
-        imwrite(intenseList{end}, fileName);
+        %imwrite(intenseList{end}, fileName);
     end
 end
 
@@ -54,11 +54,11 @@ for angle = 1:length(GaborFilters.filters)
         edgeDetected = imfilter(expandedList{scale}, gf, 'symmetric');
         %I may be better off not amplifying these values, but for now it
         %makes the results of edge detection more visible.
-        edgeDetected = edgeDetected * 10;
+        edgeDetected = edgeDetected * 20;
         thisOriList{scale} = edgeDetected;
         imageIndex = strcat(int2str(angle),'_',int2str(scale));
         fileName = strcat(directory,'edge',imageIndex,'.jpg');
-        imwrite(thisOriList{scale}, fileName);
+        %imwrite(thisOriList{scale}, fileName);
     allOriList{angle} = thisOriList;
     end
 end
@@ -79,14 +79,34 @@ for angle = 1:length(allOriList)
             imageIndex = strcat(int2str(center),'_',int2str(surround));
             imageIndex = strcat(int2str(angle),'_', imageIndex);
             fileName = strcat(directory,'oriMap',imageIndex,'.jpg');
-            imwrite(thisOMapList{end}, fileName);
+            %imwrite(thisOMapList{end}, fileName);
         end
     end
+    allOMapList{angle} = thisOMapList;
 end
 
+%Reduce feature maps for normalization
+for scale = 1:Constants.NORMSCALE;
+    for intIndex = 1:length(intenseList)
+        intenseList{intIndex} = impyramid(intenseList{intIndex},'reduce');
+    end
+    for oriAIndex = 1:length(allOMapList)
+        for oriSIndex = 1:length(allOMapList{oriAIndex})
+            allOMapList{oriAIndex}{oriSIndex} = ...
+                impyramid(allOMapList{oriAIndex}{oriSIndex},'reduce');
+        end
+    end
+    %imwrite(intenseList{1}, 'OutputImages/shrunkenIntensityMap.jpg');
+    %imwrite(allOMapList{1}{1}, 'OutputImages/shrunkenOriMap.jpg');
+end
+    
+    
 
-%edgetest = imabsdiff(edgetest2,edgetest3);
-%edgetest = double(edgetest)./double(max(edgetest(:)));
+
+
+
+
+
 
 
 
